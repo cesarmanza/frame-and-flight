@@ -2,7 +2,8 @@ import { Camera, Video, Map, Play, Pause, Volume2, VolumeX } from 'lucide-react'
 import { motion } from 'motion/react';
 import { DroneIcon } from './DroneIcon';
 import { useState, useRef, useEffect } from 'react';
-import thumbnailImage from 'figma:asset/dea5953cc93eb20867c5897b95eb04b9cc7b17dd.png';
+// Using Unsplash image for video thumbnail
+const thumbnailImage = "https://images.unsplash.com/photo-1635111031688-9b13c0125d12?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkcm9uZSUyMGFlcmlhbCUyMHJlYWwlMjBlc3RhdGUlMjBwaG90b2dyYXBoeXxlbnwxfHx8fDE3NTQ0Njk2NDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
 
 interface ServiceCardProps {
   icon: React.ReactNode;
