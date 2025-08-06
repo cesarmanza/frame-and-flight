@@ -61,9 +61,9 @@ export function ContactSection() {
   };
 
   const contactItems = [
-    { icon: Mail, text: "hello@frameandflight.com", delay: 0.1 },
-    { icon: Phone, text: "(555) 123-4567", delay: 0.2 },
-    { icon: MapPin, text: "Los Angeles, CA", delay: 0.3 }
+    { icon: Mail, text: "cesar@frame-filght.com", delay: 0.1 },
+    { icon: Phone, text: "(210) 508-9893", delay: 0.2 },
+    { icon: MapPin, text: "Austin, TX", delay: 0.3 }
   ];
 
   return (

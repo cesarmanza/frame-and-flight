@@ -56,29 +56,77 @@ function ServiceCard({ icon, title, description, index }: ServiceCardProps) {
 }
 
 function VideoShowcase() {
-  const [isPlaying, setIsPlaying] = useState(true); // Start as playing since we're autoplaying
+  const [isPlaying, setIsPlaying] = useState(false); // Start as not playing until we can confirm autoplay
   const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay compliance
   const [showControls, setShowControls] = useState(false);
+  const [canAutoplay, setCanAutoplay] = useState(false);
+  const [videoStatus, setVideoStatus] = useState<'loading' | 'ready' | 'playing' | 'paused' | 'error'>('loading');
   const videoRef = useRef<HTMLVideoElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Ensure video autoplays when component mounts
-    if (videoRef.current) {
-      videoRef.current.play().catch(error => {
-        console.log('Autoplay prevented:', error);
-        setIsPlaying(false);
-      });
-    }
-  }, []);
+    // Intersection observer to trigger autoplay when video comes into view
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && videoRef.current && !canAutoplay) {
+            attemptAutoplay();
+          }
+        });
+      },
+      {
+        threshold: 0.5, // Trigger when 50% of the video is visible
+        rootMargin: '0px 0px -100px 0px' // Start playing a bit before fully visible
+      }
+    );
 
-  const handlePlayPause = () => {
+    if (containerRef.current) {
+      observer.observe(containerRef.current);
+    }
+
+    return () => observer.disconnect();
+  }, [canAutoplay]);
+
+  const attemptAutoplay = async () => {
+    if (!videoRef.current) return;
+
+    try {
+      // Ensure video is muted for autoplay compliance
+      videoRef.current.muted = true;
+      videoRef.current.currentTime = 0;
+      
+      // Attempt to play
+      setVideoStatus('loading');
+      await videoRef.current.play();
+      setIsPlaying(true);
+      setCanAutoplay(true);
+      setVideoStatus('playing');
+      console.log('✅ Autoplay successful');
+    } catch (error) {
+      console.log('❌ Autoplay prevented by browser:', error);
+      setIsPlaying(false);
+      setCanAutoplay(false);
+      setVideoStatus('paused');
+      
+      // Show play button if autoplay fails
+      setShowControls(true);
+    }
+  };
+
+  const handlePlayPause = async () => {
     if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
         setIsPlaying(false);
       } else {
-        videoRef.current.play();
-        setIsPlaying(true);
+        try {
+          await videoRef.current.play();
+          setIsPlaying(true);
+          setCanAutoplay(true);
+        } catch (error) {
+          console.log('Play failed:', error);
+          setIsPlaying(false);
+        }
       }
     }
   };
@@ -95,11 +143,20 @@ function VideoShowcase() {
   };
 
   const handleMouseEnter = () => {
-    setShowControls(true);
+    if (isPlaying) {
+      setShowControls(true);
+    }
   };
 
   const handleMouseLeave = () => {
     setShowControls(false);
+  };
+
+  // Additional mobile/touch support
+  const handleVideoClick = () => {
+    if (!isPlaying) {
+      handlePlayPause();
+    }
   };
 
   return (
@@ -128,6 +185,7 @@ function VideoShowcase() {
 
       {/* Video Container */}
       <motion.div 
+        ref={containerRef}
         className="video-container relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl group"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
@@ -136,11 +194,29 @@ function VideoShowcase() {
       >
         <video
           ref={videoRef}
-          className="w-full h-auto"
+          className="w-full h-auto cursor-pointer"
           onEnded={handleVideoEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          autoPlay
+          onLoadedData={() => {
+            // Try autoplay once video data is loaded
+            console.log('📹 Video data loaded, ready for autoplay...');
+            setVideoStatus('ready');
+            if (!canAutoplay) {
+              setTimeout(() => attemptAutoplay(), 100); // Small delay to ensure video is ready
+            }
+          }}
+          onError={() => {
+            console.log('❌ Video loading error');
+            setVideoStatus('error');
+          }}
+          onCanPlay={() => {
+            console.log('📹 Video can play');
+            if (!canAutoplay) {
+              attemptAutoplay();
+            }
+          }}
+          onClick={handleVideoClick}
           muted={isMuted}
           loop
           playsInline
@@ -152,11 +228,35 @@ function VideoShowcase() {
           Your browser does not support the video tag.
         </video>
 
+        {/* Play Button Overlay (shown when video is not playing or autoplay failed) */}
+        {!isPlaying && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer pointer-events-auto"
+            onClick={handlePlayPause}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.button
+              className="play-button bg-white/90 hover:bg-white text-navy rounded-full p-6 shadow-xl backdrop-blur-sm"
+              whileHover={{ 
+                scale: 1.1,
+                boxShadow: "0 20px 40px rgba(10, 17, 55, 0.3)"
+              }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Play className="w-8 h-8 ml-1" fill="currentColor" />
+            </motion.button>
+          </motion.div>
+        )}
+
         {/* Custom Control Overlay */}
         <motion.div
           className="absolute inset-0 flex items-center justify-center pointer-events-none"
           initial={{ opacity: 0 }}
-          animate={{ opacity: showControls ? 1 : 0 }}
+          animate={{ opacity: showControls && isPlaying ? 1 : 0 }}
           transition={{ duration: 0.3 }}
         >
           <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-auto">
@@ -201,22 +301,22 @@ function VideoShowcase() {
           viewport={{ once: true }}
         >
           <h4 className="font-montserrat-semibold text-white text-lg mb-2">
-            Skyridge Development Timelapse
+            Commercial Traffic Pattern Analysis
           </h4>
           <p className="font-montserrat-regular text-white/80 text-sm">
-            Capturing months of construction progress from concept to completion
+            Capturing hours of footage to show traffic patterns of commercial areas
           </p>
         </motion.div>
 
-        {/* Autoplay Indicator */}
+        {/* Status Indicator */}
         <motion.div
           className="absolute top-4 right-4"
           initial={{ opacity: 1 }}
-          animate={{ opacity: isPlaying ? 0 : 1 }}
+          animate={{ opacity: isPlaying ? (isMuted ? 1 : 0) : 1 }}
           transition={{ duration: 0.3 }}
         >
           <div className="bg-navy/80 text-white px-3 py-1 rounded-full text-xs font-montserrat-semibold backdrop-blur-sm">
-            Click to play with sound
+            {!isPlaying ? "Click to play" : isMuted ? "Hover for sound controls" : ""}
           </div>
         </motion.div>
       </motion.div>
@@ -230,7 +330,7 @@ function VideoShowcase() {
         viewport={{ once: true }}
       >
         <p className="text-navy/60 font-montserrat-regular text-sm max-w-3xl mx-auto leading-relaxed">
-          This timelapse showcases our expertise in documenting construction progress and architectural development. 
+          Capturing hours of footage to show traffic patterns of commercial areas. 
           From aerial perspectives to detailed progress tracking, we capture every phase of your project with precision and artistry.
         </p>
       </motion.div>
