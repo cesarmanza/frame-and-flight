@@ -22,11 +22,29 @@ export function FrameFlightLogo({
     }
   };
 
+  const getTextClasses = () => {
+    switch (variant) {
+      case 'white':
+        return 'text-white';
+      case 'navy':
+        return 'text-navy';
+      default:
+        return 'text-navy';
+    }
+  };
+
   return (
-    <ImageWithFallback
-      src="/frame-flight-logo.png"
-      alt={alt}
-      className={getLogoClasses()}
-    />
+    <div className="relative">
+      <ImageWithFallback
+        src="/frame-flight-logo.png"
+        alt={alt}
+        className={getLogoClasses()}
+        fallback={
+          <div className={`${className} flex items-center justify-center ${getTextClasses()} font-montserrat-bold text-lg`}>
+            Frame & Flight
+          </div>
+        }
+      />
+    </div>
   );
 }
