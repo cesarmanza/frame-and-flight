@@ -228,7 +228,7 @@ function VideoShowcase() {
           {/* Info Overlay */}
           <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6">
             <h4 className="font-montserrat-semibold text-white text-lg mb-2">
-              Commercial Traffic Pattern Analysis
+              Commercial realestate timelapses
             </h4>
             <p className="font-montserrat-regular text-white/80 text-sm">
               Capturing hours of footage to show traffic patterns of commercial areas
@@ -391,7 +391,7 @@ function VideoShowcase() {
           viewport={{ once: true }}
         >
           <h4 className="font-montserrat-semibold text-white text-lg mb-2">
-            Commercial Traffic Pattern Analysis
+            Commercial realestate timelapses
           </h4>
           <p className="font-montserrat-regular text-white/80 text-sm">
             Capturing hours of footage to show traffic patterns of commercial areas

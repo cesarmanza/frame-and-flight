@@ -54,6 +54,8 @@ interface VideoPreviewProps {
 }
 
 function VideoPreview({ videoItem, isHovered, onHover, onClick }: VideoPreviewProps) {
+  const [videoLoaded, setVideoLoaded] = useState(false);
+
   return (
     <div 
       className="relative w-full h-64 overflow-hidden cursor-pointer"
@@ -69,7 +71,7 @@ function VideoPreview({ videoItem, isHovered, onHover, onClick }: VideoPreviewPr
     >
       {/* YouTube Embed - Hidden by default, shown on hover */}
       <motion.div
-        className="absolute inset-0 z-20"
+        className="absolute inset-0 z-20 pointer-events-none"
         initial={{ opacity: 0 }}
         animate={{ opacity: isHovered ? 1 : 0 }}
         transition={{ duration: 0.3 }}
@@ -77,11 +79,12 @@ function VideoPreview({ videoItem, isHovered, onHover, onClick }: VideoPreviewPr
         {isHovered && (
           <iframe
             src={getYouTubeEmbedUrl(videoItem.youtubeId, true)}
-            className="w-full h-full"
+            className="w-full h-full pointer-events-auto"
             frameBorder="0"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
             allowFullScreen
             title={videoItem.title}
+            onLoad={() => setVideoLoaded(true)}
           />
         )}
       </motion.div>
@@ -89,7 +92,7 @@ function VideoPreview({ videoItem, isHovered, onHover, onClick }: VideoPreviewPr
       {/* Thumbnail Image */}
       <motion.div
         className="absolute inset-0 z-10"
-        animate={{ opacity: isHovered ? 0 : 1 }}
+        animate={{ opacity: isHovered ? 0.1 : 1 }}
         transition={{ duration: 0.3 }}
       >
         <ImageWithFallback
@@ -217,13 +220,14 @@ export function PortfolioSection({ onOpenPortfolio, onOpenSpecificProject }: Por
                   </motion.div>
                 )}
                 
-                {/* Hover overlay with animated content */}
-                <motion.div
-                  className="absolute inset-0 bg-navy flex items-center justify-center z-30"
-                  initial={{ opacity: 0 }}
-                  whileHover={{ opacity: item.type === 'video' ? 0 : 0.9 }}
-                  transition={{ duration: 0.3 }}
-                >
+                {/* Hover overlay with animated content - Hidden for videos to allow video interaction */}
+                {item.type !== 'video' && (
+                  <motion.div
+                    className="absolute inset-0 bg-navy flex items-center justify-center z-30"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 0.9 }}
+                    transition={{ duration: 0.3 }}
+                  >
                   <motion.div 
                     className="text-center text-white p-4"
                     initial={{ y: 20, opacity: 0 }}
@@ -257,7 +261,8 @@ export function PortfolioSection({ onOpenPortfolio, onOpenSpecificProject }: Por
                       </motion.p>
                     )}
                   </motion.div>
-                </motion.div>
+                  </motion.div>
+                )}
               </div>
             </motion.div>
           ))}
@@ -279,23 +284,7 @@ export function PortfolioSection({ onOpenPortfolio, onOpenSpecificProject }: Por
           </Button>
         </motion.div>
 
-        {/* Video Configuration Guide */}
-        <motion.div 
-          className="mt-16 bg-navy/5 rounded-lg p-6 border border-navy/10"
-          initial={{ y: 30, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <h4 className="font-montserrat-semibold text-navy mb-3 flex items-center gap-2">
-            <Video className="w-5 h-5" />
-            Video Gallery Management
-          </h4>
-          <p className="font-montserrat-regular text-navy/70 text-sm leading-relaxed">
-            <strong>To add your YouTube videos:</strong> Open <code className="bg-navy/10 px-2 py-1 rounded text-xs">/components/VideoGalleryConfig.tsx</code> 
-            and replace the example video IDs with your actual YouTube video IDs. Videos will automatically appear in the portfolio with hover-to-play functionality.
-          </p>
-        </motion.div>
+
       </div>
     </section>
   );

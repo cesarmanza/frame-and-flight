@@ -82,16 +82,29 @@ export const videoItems: VideoGalleryItem[] = [
 
 export const getYouTubeEmbedUrl = (videoId: string, autoplay: boolean = false): string => {
   const baseUrl = "https://www.youtube.com/embed";
-  const params = new URLSearchParams({
-    rel: '0',           // Don't show related videos
-    modestbranding: '1', // Remove YouTube branding
-    controls: '1',       // Show player controls
-    showinfo: '0',      // Hide video info
-    iv_load_policy: '3', // Hide annotations
-    ...(autoplay && { autoplay: '1', mute: '1' }) // Autoplay with mute (required by browsers)
-  });
+  const params: Record<string, string> = {
+    rel: '0',               // Don't show related videos
+    modestbranding: '1',    // Remove YouTube branding
+    controls: '1',          // Show player controls
+    showinfo: '0',         // Hide video info
+    iv_load_policy: '3',   // Hide annotations
+    enablejsapi: '1',      // Enable JavaScript API
+  };
+
+  // Add origin only in browser environment
+  if (typeof window !== 'undefined') {
+    params.origin = window.location.origin;
+  }
+
+  if (autoplay) {
+    params.autoplay = '1';
+    params.mute = '1';      // Autoplay with mute (required by browsers)
+    params.loop = '1';      // Loop the video
+    params.playlist = videoId; // Required for loop to work
+  }
   
-  return `${baseUrl}/${videoId}?${params.toString()}`;
+  const searchParams = new URLSearchParams(params);
+  return `${baseUrl}/${videoId}?${searchParams.toString()}`;
 };
 
 export const getYouTubeThumbnail = (videoId: string, quality: 'default' | 'medium' | 'high' | 'maxres' = 'maxres'): string => {
