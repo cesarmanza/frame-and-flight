@@ -56,27 +56,48 @@ function ServiceCard({ icon, title, description, index }: ServiceCardProps) {
 }
 
 function VideoShowcase() {
-  const [isPlaying, setIsPlaying] = useState(false); // Start as not playing until we can confirm autoplay
-  const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay compliance
+  const [isVideoAvailable, setIsVideoAvailable] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
   const [showControls, setShowControls] = useState(false);
-  const [canAutoplay, setCanAutoplay] = useState(false);
-  const [videoStatus, setVideoStatus] = useState<'loading' | 'ready' | 'playing' | 'paused' | 'error'>('loading');
+  const [videoStatus, setVideoStatus] = useState<'loading' | 'ready' | 'playing' | 'paused' | 'error' | 'unavailable'>('loading');
   const videoRef = useRef<HTMLVideoElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Intersection observer to trigger autoplay when video comes into view
+    // Check if video file exists
+    const checkVideoAvailability = async () => {
+      try {
+        const response = await fetch('/skyridge-timelapse-low-res.mov', { method: 'HEAD' });
+        if (response.ok) {
+          setIsVideoAvailable(true);
+          setupIntersectionObserver();
+        } else {
+          setIsVideoAvailable(false);
+          setVideoStatus('unavailable');
+        }
+      } catch (error) {
+        console.log('Video file not available, showing placeholder');
+        setIsVideoAvailable(false);
+        setVideoStatus('unavailable');
+      }
+    };
+
+    checkVideoAvailability();
+  }, []);
+
+  const setupIntersectionObserver = () => {
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
-          if (entry.isIntersecting && videoRef.current && !canAutoplay) {
+          if (entry.isIntersecting && videoRef.current && isVideoAvailable) {
             attemptAutoplay();
           }
         });
       },
       {
-        threshold: 0.5, // Trigger when 50% of the video is visible
-        rootMargin: '0px 0px -100px 0px' // Start playing a bit before fully visible
+        threshold: 0.5,
+        rootMargin: '0px 0px -100px 0px'
       }
     );
 
@@ -85,36 +106,30 @@ function VideoShowcase() {
     }
 
     return () => observer.disconnect();
-  }, [canAutoplay]);
+  };
 
   const attemptAutoplay = async () => {
-    if (!videoRef.current) return;
+    if (!videoRef.current || !isVideoAvailable) return;
 
     try {
-      // Ensure video is muted for autoplay compliance
       videoRef.current.muted = true;
       videoRef.current.currentTime = 0;
       
-      // Attempt to play
       setVideoStatus('loading');
       await videoRef.current.play();
       setIsPlaying(true);
-      setCanAutoplay(true);
       setVideoStatus('playing');
       console.log('✅ Autoplay successful');
     } catch (error) {
       console.log('❌ Autoplay prevented by browser:', error);
       setIsPlaying(false);
-      setCanAutoplay(false);
       setVideoStatus('paused');
-      
-      // Show play button if autoplay fails
       setShowControls(true);
     }
   };
 
   const handlePlayPause = async () => {
-    if (videoRef.current) {
+    if (videoRef.current && isVideoAvailable) {
       if (isPlaying) {
         videoRef.current.pause();
         setIsPlaying(false);
@@ -122,7 +137,6 @@ function VideoShowcase() {
         try {
           await videoRef.current.play();
           setIsPlaying(true);
-          setCanAutoplay(true);
         } catch (error) {
           console.log('Play failed:', error);
           setIsPlaying(false);
@@ -152,12 +166,91 @@ function VideoShowcase() {
     setShowControls(false);
   };
 
-  // Additional mobile/touch support
   const handleVideoClick = () => {
-    if (!isPlaying) {
+    if (!isPlaying && isVideoAvailable) {
       handlePlayPause();
     }
   };
+
+  // Render placeholder when video is not available
+  if (!isVideoAvailable || videoStatus === 'unavailable') {
+    return (
+      <motion.div 
+        className="video-showcase-container mt-24 relative"
+        initial={{ y: 50, opacity: 0 }}
+        whileInView={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.8, ease: "easeOut" }}
+        viewport={{ once: true, margin: "-100px" }}
+      >
+        {/* Video Section Header */}
+        <motion.div 
+          className="video-header text-center mb-12"
+          initial={{ y: 30, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          viewport={{ once: true }}
+        >
+          <h3 className="text-2xl font-montserrat-semibold text-navy mb-4">
+            See Our Work in Action
+          </h3>
+          <p className="text-navy/70 font-montserrat-regular max-w-2xl mx-auto">
+            Experience the cinematic quality and professional precision that defines Frame & Flight's approach to aerial videography and real estate media.
+          </p>
+        </motion.div>
+
+        {/* Video Placeholder */}
+        <motion.div 
+          ref={containerRef}
+          className="video-container relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl group"
+          whileHover={{ scale: 1.02 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+        >
+          <div className="relative bg-navy/10 aspect-video flex items-center justify-center">
+            <img 
+              src={thumbnailImage} 
+              alt="Frame & Flight Portfolio Preview"
+              className="w-full h-full object-cover"
+            />
+            
+            {/* Video Coming Soon Overlay */}
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <div className="text-center text-white">
+                <Video className="w-16 h-16 mx-auto mb-4 opacity-80" />
+                <h4 className="font-montserrat-semibold text-xl mb-2">Video Portfolio Coming Soon</h4>
+                <p className="font-montserrat-regular text-sm opacity-80">
+                  Professional timelapse and aerial footage showcase
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Info Overlay */}
+          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-6">
+            <h4 className="font-montserrat-semibold text-white text-lg mb-2">
+              Commercial Traffic Pattern Analysis
+            </h4>
+            <p className="font-montserrat-regular text-white/80 text-sm">
+              Capturing hours of footage to show traffic patterns of commercial areas
+            </p>
+          </div>
+        </motion.div>
+
+        {/* Video Description */}
+        <motion.div 
+          className="video-description text-center mt-8"
+          initial={{ y: 20, opacity: 0 }}
+          whileInView={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.6, delay: 0.6 }}
+          viewport={{ once: true }}
+        >
+          <p className="text-navy/60 font-montserrat-regular text-sm max-w-3xl mx-auto leading-relaxed">
+            Capturing hours of footage to show traffic patterns of commercial areas. 
+            From aerial perspectives to detailed progress tracking, we capture every phase of your project with precision and artistry.
+          </p>
+        </motion.div>
+      </motion.div>
+    );
+  }
 
   return (
     <motion.div 
@@ -199,28 +292,24 @@ function VideoShowcase() {
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onLoadedData={() => {
-            // Try autoplay once video data is loaded
             console.log('📹 Video data loaded, ready for autoplay...');
             setVideoStatus('ready');
-            if (!canAutoplay) {
-              setTimeout(() => attemptAutoplay(), 100); // Small delay to ensure video is ready
-            }
+            setTimeout(() => attemptAutoplay(), 100);
           }}
           onError={() => {
             console.log('❌ Video loading error');
             setVideoStatus('error');
+            setIsVideoAvailable(false);
           }}
           onCanPlay={() => {
             console.log('📹 Video can play');
-            if (!canAutoplay) {
-              attemptAutoplay();
-            }
+            attemptAutoplay();
           }}
           onClick={handleVideoClick}
           muted={isMuted}
           loop
           playsInline
-          preload="auto"
+          preload="metadata"
           poster={thumbnailImage}
         >
           <source src="/skyridge-timelapse-low-res.mov" type="video/mp4" />
@@ -228,8 +317,8 @@ function VideoShowcase() {
           Your browser does not support the video tag.
         </video>
 
-        {/* Play Button Overlay (shown when video is not playing or autoplay failed) */}
-        {!isPlaying && (
+        {/* Play Button Overlay */}
+        {!isPlaying && isVideoAvailable && (
           <motion.div
             className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer pointer-events-auto"
             onClick={handlePlayPause}
@@ -253,44 +342,44 @@ function VideoShowcase() {
         )}
 
         {/* Custom Control Overlay */}
-        <motion.div
-          className="absolute inset-0 flex items-center justify-center pointer-events-none"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: showControls && isPlaying ? 1 : 0 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-auto">
-            {/* Play/Pause Button */}
-            <motion.button
-              onClick={handlePlayPause}
-              className="bg-white/90 hover:bg-white text-navy rounded-full p-3 shadow-lg backdrop-blur-sm"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              {isPlaying ? (
-                <Pause className="w-6 h-6" fill="currentColor" />
-              ) : (
-                <Play className="w-6 h-6 ml-0.5" fill="currentColor" />
-              )}
-            </motion.button>
+        {isVideoAvailable && (
+          <motion.div
+            className="absolute inset-0 flex items-center justify-center pointer-events-none"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: showControls && isPlaying ? 1 : 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-auto">
+              <motion.button
+                onClick={handlePlayPause}
+                className="bg-white/90 hover:bg-white text-navy rounded-full p-3 shadow-lg backdrop-blur-sm"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                {isPlaying ? (
+                  <Pause className="w-6 h-6" fill="currentColor" />
+                ) : (
+                  <Play className="w-6 h-6 ml-0.5" fill="currentColor" />
+                )}
+              </motion.button>
 
-            {/* Mute/Unmute Button */}
-            <motion.button
-              onClick={handleMuteToggle}
-              className="bg-white/90 hover:bg-white text-navy rounded-full p-3 shadow-lg backdrop-blur-sm"
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-            >
-              {isMuted ? (
-                <VolumeX className="w-6 h-6" />
-              ) : (
-                <Volume2 className="w-6 h-6" />
-              )}
-            </motion.button>
-          </div>
-        </motion.div>
+              <motion.button
+                onClick={handleMuteToggle}
+                className="bg-white/90 hover:bg-white text-navy rounded-full p-3 shadow-lg backdrop-blur-sm"
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ duration: 0.2 }}
+              >
+                {isMuted ? (
+                  <VolumeX className="w-6 h-6" />
+                ) : (
+                  <Volume2 className="w-6 h-6" />
+                )}
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
 
         {/* Video Info Overlay */}
         <motion.div
@@ -309,16 +398,18 @@ function VideoShowcase() {
         </motion.div>
 
         {/* Status Indicator */}
-        <motion.div
-          className="absolute top-4 right-4"
-          initial={{ opacity: 1 }}
-          animate={{ opacity: isPlaying ? (isMuted ? 1 : 0) : 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          <div className="bg-navy/80 text-white px-3 py-1 rounded-full text-xs font-montserrat-semibold backdrop-blur-sm">
-            {!isPlaying ? "Click to play" : isMuted ? "Hover for sound controls" : ""}
-          </div>
-        </motion.div>
+        {isVideoAvailable && (
+          <motion.div
+            className="absolute top-4 right-4"
+            initial={{ opacity: 1 }}
+            animate={{ opacity: isPlaying ? (isMuted ? 1 : 0) : 1 }}
+            transition={{ duration: 0.3 }}
+          >
+            <div className="bg-navy/80 text-white px-3 py-1 rounded-full text-xs font-montserrat-semibold backdrop-blur-sm">
+              {!isPlaying ? "Click to play" : isMuted ? "Hover for sound controls" : ""}
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Video Description */}
