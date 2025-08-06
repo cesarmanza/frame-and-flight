@@ -1,7 +1,8 @@
-import { Camera, Video, Map, Play } from 'lucide-react';
+import { Camera, Video, Map, Play, Pause, Volume2, VolumeX } from 'lucide-react';
 import { motion } from 'motion/react';
 import { DroneIcon } from './DroneIcon';
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import thumbnailImage from 'figma:asset/dea5953cc93eb20867c5897b95eb04b9cc7b17dd.png';
 
 interface ServiceCardProps {
   icon: React.ReactNode;
@@ -55,8 +56,20 @@ function ServiceCard({ icon, title, description, index }: ServiceCardProps) {
 }
 
 function VideoShowcase() {
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true); // Start as playing since we're autoplaying
+  const [isMuted, setIsMuted] = useState(true); // Start muted for autoplay compliance
+  const [showControls, setShowControls] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
+
+  useEffect(() => {
+    // Ensure video autoplays when component mounts
+    if (videoRef.current) {
+      videoRef.current.play().catch(error => {
+        console.log('Autoplay prevented:', error);
+        setIsPlaying(false);
+      });
+    }
+  }, []);
 
   const handlePlayPause = () => {
     if (videoRef.current) {
@@ -70,8 +83,23 @@ function VideoShowcase() {
     }
   };
 
+  const handleMuteToggle = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !isMuted;
+      setIsMuted(!isMuted);
+    }
+  };
+
   const handleVideoEnd = () => {
     setIsPlaying(false);
+  };
+
+  const handleMouseEnter = () => {
+    setShowControls(true);
+  };
+
+  const handleMouseLeave = () => {
+    setShowControls(false);
   };
 
   return (
@@ -103,6 +131,8 @@ function VideoShowcase() {
         className="video-container relative max-w-4xl mx-auto rounded-2xl overflow-hidden shadow-2xl group"
         whileHover={{ scale: 1.02 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
       >
         <video
           ref={videoRef}
@@ -110,37 +140,57 @@ function VideoShowcase() {
           onEnded={handleVideoEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          controls={isPlaying}
-          preload="metadata"
-          poster="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAwIiBoZWlnaHQ9IjQ1MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8ZGVmcz4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iYmciIHgxPSIwJSIgeTE9IjAlIiB4Mj0iMTAwJSIgeTI9IjEwMCUiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAlIiBzdHlsZT0ic3RvcC1jb2xvcjojMEExMTM3O3N0b3Atb3BhY2l0eTowLjEiIC8+CiAgICAgIDxzdG9wIG9mZnNldD0iMTAwJSIgc3R5bGU9InN0b3AtY29sb3I6IzBBMTEzNztzdG9wLW9wYWNpdHk6MC4yIiAvPgogICAgPC9saW5lYXJHcmFkaWVudD4KICA8L2RlZnM+CiAgPHJlY3Qgd2lkdGg9IjEwMCUiIGhlaWdodD0iMTAwJSIgZmlsbD0idXJsKCNiZykiLz4KICA8dGV4dCB4PSI1MCUiIHk9IjUwJSIgZm9udC1mYW1pbHk9IkFyaWFsLCBzYW5zLXNlcmlmIiBmb250LXNpemU9IjI0IiBmaWxsPSIjMEExMTM3IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBkeT0iLjNlbSI+U2t5cmlkZ2UgVGltZWxhcHNlIFZpZGVvPC90ZXh0Pgo8L3N2Zz4K"
+          autoPlay
+          muted={isMuted}
+          loop
+          playsInline
+          preload="auto"
+          poster={thumbnailImage}
         >
           <source src="/skyridge-timelapse-low-res.mov" type="video/mp4" />
           <source src="/skyridge-timelapse-low-res.mov" type="video/quicktime" />
           Your browser does not support the video tag.
         </video>
 
-        {/* Custom Play Button Overlay */}
-        {!isPlaying && (
-          <motion.div
-            className="absolute inset-0 flex items-center justify-center bg-black/20 cursor-pointer"
-            onClick={handlePlayPause}
-            whileHover={{ bg: "rgba(0,0,0,0.3)" }}
-            initial={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
+        {/* Custom Control Overlay */}
+        <motion.div
+          className="absolute inset-0 flex items-center justify-center pointer-events-none"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: showControls ? 1 : 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="absolute bottom-6 left-6 right-6 flex items-center justify-between pointer-events-auto">
+            {/* Play/Pause Button */}
             <motion.button
-              className="play-button bg-white/90 hover:bg-white text-navy rounded-full p-6 shadow-xl backdrop-blur-sm"
-              whileHover={{ 
-                scale: 1.1,
-                boxShadow: "0 20px 40px rgba(10, 17, 55, 0.3)"
-              }}
+              onClick={handlePlayPause}
+              className="bg-white/90 hover:bg-white text-navy rounded-full p-3 shadow-lg backdrop-blur-sm"
+              whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.95 }}
               transition={{ duration: 0.2 }}
             >
-              <Play className="w-8 h-8 ml-1" fill="currentColor" />
+              {isPlaying ? (
+                <Pause className="w-6 h-6" fill="currentColor" />
+              ) : (
+                <Play className="w-6 h-6 ml-0.5" fill="currentColor" />
+              )}
             </motion.button>
-          </motion.div>
-        )}
+
+            {/* Mute/Unmute Button */}
+            <motion.button
+              onClick={handleMuteToggle}
+              className="bg-white/90 hover:bg-white text-navy rounded-full p-3 shadow-lg backdrop-blur-sm"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ duration: 0.2 }}
+            >
+              {isMuted ? (
+                <VolumeX className="w-6 h-6" />
+              ) : (
+                <Volume2 className="w-6 h-6" />
+              )}
+            </motion.button>
+          </div>
+        </motion.div>
 
         {/* Video Info Overlay */}
         <motion.div
@@ -156,6 +206,18 @@ function VideoShowcase() {
           <p className="font-montserrat-regular text-white/80 text-sm">
             Capturing months of construction progress from concept to completion
           </p>
+        </motion.div>
+
+        {/* Autoplay Indicator */}
+        <motion.div
+          className="absolute top-4 right-4"
+          initial={{ opacity: 1 }}
+          animate={{ opacity: isPlaying ? 0 : 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="bg-navy/80 text-white px-3 py-1 rounded-full text-xs font-montserrat-semibold backdrop-blur-sm">
+            Click to play with sound
+          </div>
         </motion.div>
       </motion.div>
 
