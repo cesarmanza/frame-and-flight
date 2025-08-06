@@ -283,24 +283,6 @@ export function PortfolioSection({ onOpenPortfolio, onOpenSpecificProject }: Por
             View All Projects
           </Button>
         </motion.div>
-
-        {/* Video Configuration Guide */}
-        <motion.div 
-          className="mt-16 bg-navy/5 rounded-lg p-6 border border-navy/10"
-          initial={{ y: 30, opacity: 0 }}
-          whileInView={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.6 }}
-          viewport={{ once: true }}
-        >
-          <h4 className="font-montserrat-semibold text-navy mb-3 flex items-center gap-2">
-            <Video className="w-5 h-5" />
-            Video Gallery Management
-          </h4>
-          <p className="font-montserrat-regular text-navy/70 text-sm leading-relaxed">
-            <strong>To add your YouTube videos:</strong> Open <code className="bg-navy/10 px-2 py-1 rounded text-xs">/components/VideoGalleryConfig.tsx</code> 
-            and replace the example video IDs with your actual YouTube video IDs. Videos will automatically appear in the portfolio with hover-to-play functionality.
-          </p>
-        </motion.div>
       </div>
     </section>
   );
