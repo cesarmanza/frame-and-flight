@@ -2,9 +2,7 @@ import { Camera, Video, Map, Play, Pause } from 'lucide-react';
 import { motion } from 'motion/react';
 import { DroneIcon } from './DroneIcon';
 import { useState, useRef } from 'react';
-
-// Using Unsplash image for video thumbnail
-const thumbnailImage = "https://images.unsplash.com/photo-1635111031688-9b13c0125d12?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxkcm9uZSUyMGFlcmlhbCUyMHJlYWwlMjBlc3RhdGUlMjBwaG90b2dyYXBoeXxlbnwxfHx8fDE3NTQ0Njk2NDh8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral";
+import timelapseThumb from 'figma:asset/dea5953cc93eb20867c5897b95eb04b9cc7b17dd.png';
 
 interface ServiceCardProps {
   icon: React.ReactNode;
@@ -119,7 +117,7 @@ function VideoShowcase() {
           onEnded={handleVideoEnd}
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
-          poster={thumbnailImage}
+          poster={timelapseThumb}
           playsInline
         >
           <source src="/skyridge-timelapse-low-res.mov" type="video/mp4" />
