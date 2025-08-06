@@ -7,12 +7,20 @@
 /public/skyridge-timelapse-low-res.mov
 ```
 
+**✅ Thumbnail Image:** Your specific aerial shopping center image is now integrated directly into the component
+
 ## 📁 Video File Requirements
 - **Filename:** `skyridge-timelapse-low-res.mov` (exact name)
 - **Format:** .mov, .mp4, or .webm (recommended)
 - **Size:** Optimized for web (under 50MB recommended)
 - **Resolution:** HD (1920x1080) or higher
 - **Compression:** Web-optimized for fast loading
+
+## ✅ Thumbnail Image Status
+- **Status:** ✅ **INTEGRATED** - Your specific aerial shopping center image is now imported directly
+- **Image:** The aerial view of the shopping center with Brewhouse that you provided
+- **Quality:** High resolution for crisp display
+- **Loading:** Optimized with proper fallback handling
 
 ## 🎯 Current Integration Status
 ✅ **Video Component Ready** - ServicesSection configured for your video
@@ -97,8 +105,10 @@ youtubeId: "YOUR_ACTUAL_VIDEO_ID"
 ## 🔧 File Structure
 ```
 /public/
-├── skyridge-timelapse-low-res.mov  ← Your video goes here
-└── VIDEO-SETUP.md                  ← This guide
+├── skyridge-timelapse-low-res.mov        ← Your video goes here
+└── VIDEO-SETUP.md                        ← This guide
+
+Note: Thumbnail is now integrated directly in the component via figma:asset import
 
 /components/
 ├── ServicesSection.tsx             ← Video showcase component

@@ -2,6 +2,7 @@ import { Camera, Video, Map, Play, Pause } from 'lucide-react';
 import { motion } from 'motion/react';
 import { DroneIcon } from './DroneIcon';
 import { useState, useRef } from 'react';
+import { ImageWithFallback } from './figma/ImageWithFallback';
 import timelapseThumb from 'figma:asset/dea5953cc93eb20867c5897b95eb04b9cc7b17dd.png';
 
 interface ServiceCardProps {
@@ -57,10 +58,25 @@ function ServiceCard({ icon, title, description, index }: ServiceCardProps) {
 
 function VideoShowcase() {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [showVideo, setShowVideo] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const handlePlayPause = () => {
-    if (videoRef.current) {
+    if (!showVideo) {
+      setShowVideo(true);
+      // Small delay to allow video element to mount
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.play().then(() => {
+            setIsPlaying(true);
+          }).catch((error) => {
+            console.log('Video play failed:', error);
+            // Video not available, keep showing thumbnail
+            setShowVideo(false);
+          });
+        }
+      }, 100);
+    } else if (videoRef.current) {
       if (isPlaying) {
         videoRef.current.pause();
         setIsPlaying(false);
@@ -69,7 +85,6 @@ function VideoShowcase() {
           setIsPlaying(true);
         }).catch((error) => {
           console.log('Video play failed:', error);
-          // Video not available, keep showing placeholder
         });
       }
     }
@@ -77,6 +92,7 @@ function VideoShowcase() {
 
   const handleVideoEnd = () => {
     setIsPlaying(false);
+    setShowVideo(false);
   };
 
   return (
@@ -110,20 +126,31 @@ function VideoShowcase() {
         transition={{ duration: 0.4, ease: "easeOut" }}
         onClick={handlePlayPause}
       >
-        {/* Video Element */}
-        <video
-          ref={videoRef}
-          className="w-full h-auto"
-          onEnded={handleVideoEnd}
-          onPlay={() => setIsPlaying(true)}
-          onPause={() => setIsPlaying(false)}
-          poster={timelapseThumb}
-          playsInline
-        >
-          <source src="/skyridge-timelapse-low-res.mov" type="video/mp4" />
-          <source src="/skyridge-timelapse-low-res.mov" type="video/quicktime" />
-          Your browser does not support the video tag.
-        </video>
+        {/* Video Element - only render when playing */}
+        {showVideo && (
+          <video
+            ref={videoRef}
+            className="w-full h-auto"
+            onEnded={handleVideoEnd}
+            onPlay={() => setIsPlaying(true)}
+            onPause={() => setIsPlaying(false)}
+            playsInline
+            controls={isPlaying}
+          >
+            <source src="/skyridge-timelapse-low-res.mov" type="video/mp4" />
+            <source src="/skyridge-timelapse-low-res.mov" type="video/quicktime" />
+            Your browser does not support the video tag.
+          </video>
+        )}
+
+        {/* Thumbnail Image - show when video is not playing */}
+        {!showVideo && (
+          <img
+            src={timelapseThumb}
+            alt="Commercial real estate timelapse thumbnail - aerial view of shopping center with Brewhouse"
+            className="w-full h-auto"
+          />
+        )}
 
         {/* Play/Pause Button Overlay */}
         <motion.div
